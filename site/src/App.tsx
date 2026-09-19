@@ -162,12 +162,13 @@ export default function App() {
         <>
           {phase === 'interview' && (
             <header className="hero">
-              <div className="kicker">INTERVIEW · {QUESTIONS.length} QUESTIONS · ~6 MIN</div>
+              <div className="kicker">RESULT-AS-A-SERVICE · INTERVIEW · {QUESTIONS.length} QUESTIONS · ~6 MIN</div>
               <h1>Your RAG product's<br />engineering playbook, on record</h1>
               <p className="sub">
                 Answer with defaults if you're in a hurry — every question explains
                 itself. You leave with a playbook document and a working repo scaffold:
-                agent rules, eval gates wired to your numbers, isolation tests, PR templates.
+                agent rules, outcome gates wired to your numbers, billing-integrity and
+                isolation tests, PR templates.
               </p>
               <label className="beginner">
                 <input type="checkbox" checked={beginner} onChange={(e) => setBeginner(e.target.checked)} />

@@ -1,6 +1,6 @@
 # raas-agentic-playbook
 
-A specialized **Agentic Engineering Playbook for RAG-as-a-Service (RaaS)**
+A specialized **Agentic Engineering Playbook for Result-as-a-Service (RaaS)**
 teams. Give it to any developer building RAG products: their AI agents get
 safety rules, retrieval evals as merge gates, tenant-isolation policy, and
 evidence-based handoffs from day one.
@@ -17,7 +17,7 @@ evidence-based handoffs from day one.
 
 ## Website (playbook generator)
 
-`site/` contains an **interview-driven generator**: 24 dynamic questions
+`site/` contains an **interview-driven generator**: 30 dynamic questions
 (one at a time, defaults + options + custom answers, follow-ups adapt to your
 answers). Output: a **complete boilerplate project as ZIP** — AGENTS.md,
 playbook, eval gates wired into CI, PR templates, evals/ skeleton, isolation
