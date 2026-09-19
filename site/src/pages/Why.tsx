@@ -127,8 +127,10 @@ function Section({ n, title, children }: { n: string; title: string; children: R
   return (
     <section className="why-sec">
       <div className="sec-no">{n}</div>
-      <h2>{title}</h2>
-      {children}
+      <div className="sec-body">
+        <h2>{title}</h2>
+        {children}
+      </div>
     </section>
   )
 }
