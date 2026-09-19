@@ -8,10 +8,11 @@ import { answersToConfig, slug } from './generator'
 import { generatePlaybook } from './generator'
 import { generateProject, buildZipBlob, type GeneratedFile } from './generator'
 import Why from './pages/Why'
+import Use from './pages/Use'
 
 type Answers = Record<string, AnswerValue>
 type Phase = 'interview' | 'review' | 'output'
-type Route = '#/' | '#/why'
+type Route = '#/' | '#/why' | '#/use'
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
@@ -152,12 +153,15 @@ export default function App() {
         </a>
         <nav>
           <a className={route === '#/why' ? 'on' : ''} href="#/why" onClick={() => nav('#/why')}>Why this matters</a>
+          <a className={route === '#/use' ? 'on' : ''} href="#/use" onClick={() => nav('#/use')}>Use the output</a>
           <a className={route === '#/' ? 'on' : ''} href="#/" onClick={() => nav('#/')}>The interview</a>
         </nav>
       </header>
 
       {route === '#/why' ? (
         <Why onStart={() => { reset(); nav('#/') }} />
+      ) : route === '#/use' ? (
+        <Use onGenerate={() => { reset(); nav('#/') }} />
       ) : (
         <>
           {phase === 'interview' && (
@@ -314,7 +318,7 @@ export default function App() {
       <footer>
         <p>
           Built on the <a href="https://www.agenticamit.com/resources/agentic-engineering-playbook" target="_blank" rel="noreferrer">Agentic Engineering Playbook</a>
-          {' '}· worktree &amp; sandbox practice from McQuaid (2026) and Claude Code docs · <a href="#/why" onClick={() => nav('#/why')}>why this matters</a>
+          {' '}· worktree &amp; sandbox practice from McQuaid (2026) and Claude Code docs · <a href="#/why" onClick={() => nav('#/why')}>why this matters</a> · <a href="#/use" onClick={() => nav('#/use')}>use the output</a>
         </p>
       </footer>
     </div>

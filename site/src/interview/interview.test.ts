@@ -125,7 +125,7 @@ describe('vocabulary guard (Result-as-a-Service, not RAG)', () => {
   const path = require('path')
   const siteRoot = path.resolve(__dirname, '../..')
   const files = [
-    'src/App.tsx', 'src/pages/Why.tsx', 'src/interview/questions.ts',
+    'src/App.tsx', 'src/pages/Why.tsx', 'src/pages/Use.tsx', 'src/interview/questions.ts',
     'src/generator/config.ts', 'src/generator/template.ts', 'src/generator/files.ts',
     'index.html',
   ]
@@ -140,5 +140,24 @@ describe('vocabulary guard (Result-as-a-Service, not RAG)', () => {
     const html = fs.readFileSync(path.join(siteRoot, 'index.html'), 'utf-8')
     expect(app).toMatch(/RaaS product/)
     expect(html).toContain('Result-as-a-Service')
+  })
+})
+
+describe('use-the-output page', () => {
+  const fs = require('fs')
+  const path = require('path')
+  const siteRoot = path.resolve(__dirname, '../..')
+  it('exists and teaches: wiring, baseline, agent loop, defect path', () => {
+    const text = fs.readFileSync(path.join(siteRoot, 'src/pages/Use.tsx'), 'utf-8')
+    expect(text).toContain('First ten minutes')
+    expect(text).toContain('Wire the gates')
+    expect(text).toContain('agent task')
+    expect(text).toContain('defect path')
+    expect(text).toContain('RaasPlaybook')
+  })
+  it('is routed in App.tsx', () => {
+    const app = fs.readFileSync(path.join(siteRoot, 'src/App.tsx'), 'utf-8')
+    expect(app).toContain("'#/use'")
+    expect(app).toContain("Use the output")
   })
 })

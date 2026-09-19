@@ -212,3 +212,8 @@ h1 { font-family: var(--serif); font-weight: 600; letter-spacing: -0.015em; line
 footer { border-top: 2px solid var(--ink); margin-top: auto; padding: 16px 0 28px; }
 footer p { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
 footer a { color: var(--ink-2); }
+
+/* use-page ordered steps */
+.steps { padding-left: 20px; }
+.steps li { margin-bottom: 12px; }
+.steps pre.code { margin: 8px 0; }
