@@ -15,10 +15,27 @@ evidence-based handoffs from day one.
 3. Follow the adoption checklist in PLAYBOOK §11
 4. Use `playbook/templates/` (task contract, PR evidence block, run handoff)
 
+## Website (playbook generator)
+
+`site/` contains a web app where developers configure their product
+(type, thresholds, provider, maturity) and **generate a customized playbook**
+as Markdown — live preview, download, copy.
+
+```bash
+cd site && npm install
+npm run dev        # local dev
+npm run test       # generator unit tests (vitest)
+npm run build      # static output in site/dist → deploy anywhere
+```
+
+Deploy `site/dist/` to Netlify/Vercel/GitHub Pages (set Vite `base` for
+project-page hosting).
+
 ## Repo layout
 
 ```
-playbook/            # the deliverable — the playbook + copy-paste templates
+playbook/            # the canonical playbook + copy-paste templates
+site/                # the web generator (React/TS, produces customized playbooks)
 AGENTS.md            # rules for agents working on THIS repo
 docs/                # ADRs, memory bank, evidence system, sources manifest
 .github/             # PR/issue templates, CI scaffold
