@@ -163,7 +163,7 @@ export default function App() {
           {phase === 'interview' && (
             <header className="hero">
               <div className="kicker">RESULT-AS-A-SERVICE · INTERVIEW · {QUESTIONS.length} QUESTIONS · ~6 MIN</div>
-              <h1>Your RAG product's<br />engineering playbook, on record</h1>
+              <h1>Your RaaS product's<br />engineering playbook, on record</h1>
               <p className="sub">
                 Answer with defaults if you're in a hurry — every question explains
                 itself. You leave with a playbook document and a working repo scaffold:

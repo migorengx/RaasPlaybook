@@ -119,3 +119,26 @@ describe('generateProject (Result-as-a-Service scaffold)', () => {
     expect(gpaths).toContain('.gitlab-ci.yml')
   })
 })
+
+describe('vocabulary guard (Result-as-a-Service, not RAG)', () => {
+  const fs = require('fs')
+  const path = require('path')
+  const siteRoot = path.resolve(__dirname, '../..')
+  const files = [
+    'src/App.tsx', 'src/pages/Why.tsx', 'src/interview/questions.ts',
+    'src/generator/config.ts', 'src/generator/template.ts', 'src/generator/files.ts',
+    'index.html',
+  ]
+  it('never mentions RAG — the product is Result-as-a-Service', () => {
+    for (const rel of files) {
+      const text = fs.readFileSync(path.join(siteRoot, rel), 'utf-8')
+      expect(text, `${rel} mentions RAG`).not.toMatch(/RAG/)
+    }
+  })
+  it('states the Result-as-a-Service identity in hero and metadata', () => {
+    const app = fs.readFileSync(path.join(siteRoot, 'src/App.tsx'), 'utf-8')
+    const html = fs.readFileSync(path.join(siteRoot, 'index.html'), 'utf-8')
+    expect(app).toMatch(/RaaS product/)
+    expect(html).toContain('Result-as-a-Service')
+  })
+})
