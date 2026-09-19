@@ -1,0 +1,24 @@
+# CI scaffold — wire to the chosen stack.
+# Runs the same gates as `make check` so CI and agents share one contract.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # --- wire per stack, e.g. ---
+      # - uses: actions/setup-node@v4
+      #   with: { node-version: '22' }
+      # - run: npm ci
+      # - run: npm run lint
+      # - run: npm run typecheck
+      # - run: npm test
+      - name: No-op until stack is chosen
+        run: echo "Wire this workflow to the project stack."

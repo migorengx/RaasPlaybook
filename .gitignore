@@ -1,0 +1,30 @@
+# --- universal ---
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+dist/
+build/
+coverage/
+.cache/
+
+# --- node ---
+node_modules/
+
+# --- python ---
+__pycache__/
+.venv/
+*.pyc
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+
+# --- rust ---
+target/
+
+# --- agent worktrees ---
+.claude/worktrees/
+.worktrees/

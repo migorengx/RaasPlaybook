@@ -1,0 +1,4 @@
+# Files copied from the main checkout into fresh agent worktrees.
+# One path per line. NEVER list real secrets — use .env.example.
+# .env.local
+# node_modules/

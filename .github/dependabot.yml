@@ -1,0 +1,6 @@
+version: 2
+updates:
+  # Enable per ecosystem once the stack is chosen, e.g.:
+  # - package-ecosystem: "npm"
+  #   directory: "/"
+  #   schedule: { interval: "weekly" }

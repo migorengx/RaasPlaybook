@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Set up a fresh checkout or worktree. Idempotent: safe to re-run.
+# Wire to the chosen stack, e.g.:
+#   node:  npm ci && npx husky install
+#   py:    uv sync && pre-commit install
+#   rust:  cargo fetch
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+echo "TODO: bootstrap this project's environment (deps, git hooks, build)."

@@ -1,0 +1,6 @@
+# CODEOWNERS — required reviewers per path
+# syntax: <path> <@user or @team>
+
+*                       @<OWNER>
+/docs/                  @<OWNER>
+/.github/               @<OWNER>
