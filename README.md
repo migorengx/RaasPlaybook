@@ -17,9 +17,11 @@ evidence-based handoffs from day one.
 
 ## Website (playbook generator)
 
-`site/` contains a web app where developers configure their product
-(type, thresholds, provider, maturity) and **generate a customized playbook**
-as Markdown — live preview, download, copy.
+`site/` contains an **interview-driven generator**: 24 dynamic questions
+(one at a time, defaults + options + custom answers, follow-ups adapt to your
+answers). Output: a **complete boilerplate project as ZIP** — AGENTS.md,
+playbook, eval gates wired into CI, PR templates, evals/ skeleton, isolation
+tests, worktree/sandbox guides — plus the standalone playbook .md.
 
 ```bash
 cd site && npm install

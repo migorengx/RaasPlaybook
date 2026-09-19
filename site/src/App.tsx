@@ -1,162 +1,288 @@
 import { useMemo, useState } from 'react'
 import { marked } from 'marked'
+import {
+  QUESTIONS, visibleQuestions, initialAnswers,
+  type AnswerValue, type Question,
+} from './interview/questions'
+import { answersToConfig, slug } from './generator'
 import { generatePlaybook } from './generator'
-import { defaultConfig, type PlaybookConfig } from './generator'
+import { generateProject, buildZipBlob, type GeneratedFile } from './generator'
 
-/** Escape user-supplied strings so they can't inject HTML into the preview. */
-const esc = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+type Answers = Record<string, AnswerValue>
+type Phase = 'interview' | 'review' | 'output'
 
-const sanitize = (c: PlaybookConfig): PlaybookConfig => ({
-  ...c,
-  productName: esc(c.productName.trim() || 'MyRaaS').slice(0, 60),
-  securityContact: esc(c.securityContact.trim() || 'security@example.com').slice(0, 120),
-})
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 export default function App() {
-  const [config, setConfig] = useState<PlaybookConfig>(defaultConfig)
+  const [answers, setAnswers] = useState<Answers>(initialAnswers)
+  const [phase, setPhase] = useState<Phase>('interview')
+  const [step, setStep] = useState(0)
+  const [customMode, setCustomMode] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [selectedFile, setSelectedFile] = useState(0)
+  const [zipInfo, setZipInfo] = useState<{ blob: Blob; files: GeneratedFile[] } | null>(null)
 
-  const markdown = useMemo(() => generatePlaybook(sanitize(config)), [config])
-  const html = useMemo(() => marked.parse(markdown, { async: false }) as string, [markdown])
-  const words = markdown.split(/\s+/).length
+  const visible = useMemo(() => visibleQuestions(answers), [answers])
+  const q: Question | undefined = visible[Math.min(step, visible.length - 1)]
+  const progress = phase === 'interview' ? Math.round((step / visible.length) * 100) : 100
+  const config = useMemo(() => answersToConfig(answers), [answers])
 
-  const download = () => {
-    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' })
+  const setAnswer = (id: string, v: AnswerValue) => setAnswers((a) => ({ ...a, [id]: v }))
+
+  const isAnswered = (qq: Question) => {
+    if (qq.optional) return true
+    const v = answers[qq.id]
+    return qq.widget.kind === 'toggle' ? (v as string[]).length > 0 : String(v ?? '').trim() !== ''
+  }
+  const error = q && !isAnswered(q) ? 'An answer is required.' : q?.validate ? q.validate(answers[q.id]) : null
+
+  const next = () => {
+    if (error) return
+    setCustomMode(false)
+    if (step + 1 >= visible.length) setPhase('review')
+    else setStep(step + 1)
+  }
+  const back = () => {
+    setCustomMode(false)
+    if (step === 0) return
+    setStep(step - 1)
+  }
+
+  const playbookMd = useMemo(() => generatePlaybook(config), [config])
+  const projectFiles = useMemo(() => generateProject(config), [config])
+
+  const downloadZip = async () => {
+    const { blob } = await buildZipBlob(config)
+    setZipInfo({ blob, files: projectFiles })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = `${sanitize(config).productName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-agentic-playbook.md`
+    a.download = `${slug(config.productName)}-agentic-boilerplate.zip`
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+  const downloadMd = (content: string, name: string) => {
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([content], { type: 'text/markdown;charset=utf-8' }))
+    a.download = name
     a.click()
     URL.revokeObjectURL(a.href)
   }
 
-  const copy = async () => {
-    await navigator.clipboard.writeText(markdown)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
+  // ── render helpers ──────────────────────────────────────────────
+  const renderWidget = (qq: Question) => {
+    const v = answers[qq.id]
+    const w = qq.widget
+    if (w.kind === 'text') {
+      return (
+        <textarea
+          className={w.multiline ? 'ta tall' : 'ta'}
+          placeholder={w.placeholder}
+          value={String(v ?? '')}
+          onChange={(e) => setAnswer(qq.id, e.target.value)}
+          rows={w.multiline ? 3 : 1}
+        />
+      )
+    }
+    if (w.kind === 'toggle') {
+      const arr = v as string[]
+      return (
+        <div className="opts">
+          {w.options.map((o) => (
+            <label key={o.value} className={`opt ${arr.includes(o.value) ? 'on' : ''}`}>
+              <input
+                type="checkbox"
+                checked={arr.includes(o.value)}
+                onChange={(e) =>
+                  setAnswer(qq.id, e.target.checked ? [...arr, o.value] : arr.filter((x) => x !== o.value))
+                }
+              />
+              <span>{o.label}</span>
+            </label>
+          ))}
+        </div>
+      )
+    }
+    // choice
+    const isCustom = !w.options.some((o) => o.value === v)
+    return (
+      <div className="opts">
+        {w.options.map((o) => (
+          <label key={o.value} className={`opt ${v === o.value && !customMode ? 'on' : ''}`}>
+            <input
+              type="radio"
+              name={qq.id}
+              checked={v === o.value && !customMode}
+              onChange={() => { setCustomMode(false); setAnswer(qq.id, o.value) }}
+            />
+            <span>
+              <b>{o.label}</b>
+              {o.hint && <small> — {o.hint}</small>}
+            </span>
+          </label>
+        ))}
+        {w.customAllowed && (
+          <div className={`opt custom ${customMode || isCustom ? 'on' : ''}`}>
+            <label className="custom-head">
+              <input
+                type="radio"
+                name={qq.id}
+                checked={customMode || isCustom}
+                onChange={() => setCustomMode(true)}
+              />
+              <b>Custom…</b>
+            </label>
+            {(customMode || isCustom) && (
+              <input
+                className="custom-input"
+                autoFocus
+                placeholder={w.customPlaceholder ?? 'your answer'}
+                value={isCustom ? String(v) : ''}
+                onChange={(e) => setAnswer(qq.id, esc(e.target.value))}
+              />
+            )}
+          </div>
+        )}
+      </div>
+    )
   }
 
-  const set = <K extends keyof PlaybookConfig>(k: K, v: PlaybookConfig[K]) =>
-    setConfig((c) => ({ ...c, [k]: v }))
-
-  const setT = (k: keyof PlaybookConfig['thresholds'], v: number) =>
-    setConfig((c) => ({ ...c, thresholds: { ...c.thresholds, [k]: v } }))
-
-  const setI = (k: keyof PlaybookConfig['include'], v: boolean) =>
-    setConfig((c) => ({ ...c, include: { ...c.include, [k]: v } }))
+  const sections = [...new Set(QUESTIONS.map((x) => x.section))]
 
   return (
     <div className="app">
       <header className="hero">
         <div className="badge">raas-agentic-playbook</div>
-        <h1>Generate your team's<br /><span>agentic engineering playbook</span></h1>
+        <h1>Interview → your <span>agentic playbook</span><br />&amp; project boilerplate</h1>
         <p className="sub">
-          Answer six questions. Get a complete, customized playbook for building
-          RAG products with AI agents — eval gates, change tiers, isolation
-          policy, evidence ladders. Download it as Markdown and drop it in your repo.
+          {QUESTIONS.length} questions, one at a time. Dynamic follow-ups based on your answers.
+          Walk out with a customized playbook <i>and</i> a complete repo scaffold —
+          AGENTS.md, eval gates, CI, templates — as a ZIP.
         </p>
       </header>
 
-      <main className="generator">
-        <aside className="panel form">
-          <h2>Configure</h2>
-
-          <label>Product name
-            <input value={config.productName} maxLength={60}
-              onChange={(e) => set('productName', e.target.value)} />
-          </label>
-
-          <label>Product type
-            <select value={config.productType}
-              onChange={(e) => set('productType', e.target.value as PlaybookConfig['productType'])}>
-              <option value="raas">RAG-as-a-Service (multi-tenant)</option>
-              <option value="internal-rag">Internal RAG</option>
-              <option value="chatbot">Customer-facing chatbot</option>
-            </select>
-          </label>
-
-          <label>LLM provider
-            <select value={config.provider}
-              onChange={(e) => set('provider', e.target.value as PlaybookConfig['provider'])}>
-              <option value="openai">OpenAI</option>
-              <option value="anthropic">Anthropic</option>
-              <option value="local">Local / self-hosted</option>
-              <option value="mixed">Mixed providers</option>
-            </select>
-          </label>
-
-          <label>Team maturity
-            <select value={config.teamMaturity}
-              onChange={(e) => set('teamMaturity', e.target.value as PlaybookConfig['teamMaturity'])}>
-              <option value="solo">Solo engineer</option>
-              <option value="team">Team</option>
-              <option value="platform">Platform / multi-team</option>
-            </select>
-          </label>
-
-          <fieldset>
-            <legend>Quality gates</legend>
-            <label className="num">Hit-rate@5 ≥
-              <input type="number" step="0.01" min="0.5" max="1" value={config.thresholds.hitRateAt5}
-                onChange={(e) => setT('hitRateAt5', Number(e.target.value))} />
-            </label>
-            <label className="num">Faithfulness ≥
-              <input type="number" step="0.01" min="0.5" max="1" value={config.thresholds.faithfulness}
-                onChange={(e) => setT('faithfulness', Number(e.target.value))} />
-            </label>
-            <label className="num">Hallucination ≤ %
-              <input type="number" step="0.5" min="0" max="20" value={config.thresholds.hallucinationMax}
-                onChange={(e) => setT('hallucinationMax', Number(e.target.value))} />
-            </label>
-            <label className="num">p95 latency ≤ ms
-              <input type="number" step="50" min="50" max="5000" value={config.thresholds.latencyP95Ms}
-                onChange={(e) => setT('latencyP95Ms', Number(e.target.value))} />
-            </label>
-            <label className="num">Cost delta ≤ %
-              <input type="number" step="1" min="0" max="100" value={config.thresholds.costDeltaMaxPct}
-                onChange={(e) => setT('costDeltaMaxPct', Number(e.target.value))} />
-            </label>
-          </fieldset>
-
-          <fieldset>
-            <legend>Include sections</legend>
-            <label className="check"><input type="checkbox" checked={config.include.worktrees}
-              onChange={(e) => setI('worktrees', e.target.checked)} /> Worktrees & parallel agents</label>
-            <label className="check"><input type="checkbox" checked={config.include.sandboxing}
-              onChange={(e) => setI('sandboxing', e.target.checked)} /> Sandboxing</label>
-            <label className="check"><input type="checkbox" checked={config.include.canary}
-              onChange={(e) => setI('canary', e.target.checked)} /> Canary rollout gate</label>
-            <label className="check"><input type="checkbox" checked={config.include.adrs}
-              onChange={(e) => setI('adrs', e.target.checked)} /> Decision records (ADR)</label>
-          </fieldset>
-
-          <label>Security contact
-            <input value={config.securityContact}
-              onChange={(e) => set('securityContact', e.target.value)} />
-          </label>
-
-          <div className="actions">
-            <button className="primary" onClick={download}>Download .md</button>
-            <button onClick={copy}>{copied ? 'Copied ✓' : 'Copy markdown'}</button>
+      {phase === 'interview' && q && (
+        <main className="wizard">
+          <div className="progress">
+            <div className="bar" style={{ width: `${progress}%` }} />
           </div>
-        </aside>
-
-        <section className="panel preview">
-          <div className="preview-head">
-            <h2>Live preview</h2>
-            <span className="meta">{words.toLocaleString()} words · updates as you configure</span>
+          <div className="meta-row">
+            <span className="meta">{q.section}</span>
+            <span className="meta">{step + 1} / {visible.length}</span>
           </div>
-          <article className="md" dangerouslySetInnerHTML={{ __html: html }} />
-        </section>
-      </main>
+          <section className="panel qcard">
+            <h2>{q.prompt}</h2>
+            {q.help && <p className="help">{q.help}</p>}
+            {renderWidget(q)}
+            {error && <p className="error">{error}</p>}
+            <div className="actions">
+              <button onClick={back} disabled={step === 0}>← Back</button>
+              <button className="primary" onClick={next} disabled={!!error}>
+                {step + 1 >= visible.length ? 'Review →' : 'Next →'}
+              </button>
+            </div>
+          </section>
+          <p className="meta center">Defaults are preset — a fast run is just: Next, Next, Next…</p>
+        </main>
+      )}
+
+      {phase === 'review' && (
+        <main className="wizard">
+          <section className="panel">
+            <h2>Review your answers</h2>
+            {sections.map((sec) => {
+              const qs = visible.filter((x) => x.section === sec)
+              if (!qs.length) return null
+              return (
+                <div key={sec} className="rev-sec">
+                  <h3>{sec}</h3>
+                  {qs.map((qq) => {
+                    const v = answers[qq.id]
+                    const label = Array.isArray(v) ? v.join(', ') : String(v)
+                    const idx = visible.findIndex((x) => x.id === qq.id)
+                    return (
+                      <button key={qq.id} className="rev-row" onClick={() => { setStep(idx); setPhase('interview') }}>
+                        <span className="q">{qq.prompt}</span>
+                        <span className="a">{label || '—'} <i>edit</i></span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )
+            })}
+            <div className="actions">
+              <button onClick={() => setPhase('interview')}>← Keep editing</button>
+              <button className="primary" onClick={async () => {
+                const { blob } = await buildZipBlob(config)
+                setZipInfo({ blob, files: projectFiles })
+                setPhase('output')
+              }}>Generate project →</button>
+            </div>
+          </section>
+        </main>
+      )}
+
+      {phase === 'output' && (
+        <main className="output">
+          <section className="panel out-actions">
+            <h2>Your {config.productName} package</h2>
+            <p className="help">{projectFiles.length} files · playbook + repo scaffold wired to your gates</p>
+            <div className="actions">
+              <button className="primary" onClick={downloadZip}>⬇ Download boilerplate ZIP</button>
+              <button onClick={() => downloadMd(playbookMd, `${slug(config.productName)}-playbook.md`)}>⬇ Playbook .md only</button>
+            </div>
+            {zipInfo && <p className="meta">ZIP ready — {(zipInfo.blob.size / 1024).toFixed(1)} KB</p>}
+            <div className="actions" style={{ marginTop: 12 }}>
+              <button onClick={() => { setPhase('review'); setZipInfo(null) }}>← Change answers</button>
+              <button onClick={() => { setAnswers(initialAnswers()); setStep(0); setPhase('interview') }}>Start over</button>
+            </div>
+          </section>
+
+          <section className="panel out-files">
+            <div className="preview-head">
+              <h2>Generated files</h2>
+              <span className="meta">{projectFiles.length} files</span>
+            </div>
+            <div className="file-grid">
+              <ul className="tree">
+                {projectFiles.map((file, i) => (
+                  <li key={file.path}>
+                    <button className={`tree-row ${i === selectedFile ? 'on' : ''}`} onClick={() => setSelectedFile(i)}>
+                      {file.path}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="file-view">
+                <div className="preview-head">
+                  <span className="meta">{projectFiles[selectedFile]?.path}</span>
+                  <span>
+                    <button className="mini" onClick={async () => {
+                      await navigator.clipboard.writeText(projectFiles[selectedFile]?.content ?? '')
+                      setCopied(true); setTimeout(() => setCopied(false), 1200)
+                    }}>{copied ? 'Copied ✓' : 'Copy'}</button>
+                    <button className="mini" onClick={() => downloadMd(
+                      projectFiles[selectedFile]?.content ?? '',
+                      projectFiles[selectedFile]?.path.split('/').pop() ?? 'file.md'
+                    )}>Save</button>
+                  </span>
+                </div>
+                {projectFiles[selectedFile]?.path.endsWith('.md') ? (
+                  <article className="md" dangerouslySetInnerHTML={{
+                    __html: marked.parse(projectFiles[selectedFile].content, { async: false }) as string,
+                  }} />
+                ) : (
+                  <pre className="code">{projectFiles[selectedFile]?.content}</pre>
+                )}
+              </div>
+            </div>
+          </section>
+        </main>
+      )}
 
       <footer>
         <p>
-          Built on the{' '}
-          <a href="https://www.agenticamit.com/resources/agentic-engineering-playbook" target="_blank" rel="noreferrer">
-            Agentic Engineering Playbook</a>{' '}
-          · worktree/sandbox practice from Mike McQuaid & Claude Code docs ·
-          <a href="https://github.com/"> source repo</a>
+          Questions sourced from the playbook · built on the{' '}
+          <a href="https://www.agenticamit.com/resources/agentic-engineering-playbook" target="_blank" rel="noreferrer">Agentic Engineering Playbook</a>
         </p>
       </footer>
     </div>
