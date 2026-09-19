@@ -119,3 +119,12 @@ describe('optional questions', () => {
     for (const x of required) expect(String(initialAnswers()[x.id]).trim()).not.toBe('')
   })
 })
+
+describe('newbie explanations', () => {
+  it('every question carries a plain-language explanation', () => {
+    for (const q of QUESTIONS) {
+      expect(q.plain, `missing plain for ${q.id}`).toBeTruthy()
+      expect(q.plain.length, `plain too short for ${q.id}`).toBeGreaterThan(40)
+    }
+  })
+})
