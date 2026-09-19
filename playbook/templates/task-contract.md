@@ -1,17 +1,14 @@
-# Task Contract — <title> (RaaS)
+# Task Contract — <title> (Result-as-a-Service)
 
-1. **Objective**: <user/system outcome>
-2. **In scope**: <services/files, e.g. retrieve/, one prompt template>
-3. **Out of scope**: <esp. chunking params, embedding model, tenant schemas>
-4. **Constraints**: p95 ≤ <ms> | $/query ≤ <budget> | provider limits | residency
-5. **Sources of truth**: <API schema, golden set vX, ADR-000N, tenant config schema>
+1. **Objective**: <the outcome improvement, in user terms>
+2. **In scope**: <services/files; e.g. one pipeline step, one prompt template>
+3. **Out of scope**: <esp. autonomy level, acceptance rules, pricing — those are tier-H>
+4. **Constraints**: p95 turnaround ≤ <1h> | cost/result ≤ +<5>% | no new deps
+5. **Sources of truth**: <acceptance rules, gold set vX, ADR-000N, billing config>
 6. **Acceptance criteria (observable)**:
-   - hit-rate@5 ≥ <0.85> on golden <vX>
-   - faithfulness ≥ <0.90>; hallucination ≤ <2%>
-   - cross-tenant leak = 0 (hard)
+   - gold re-run: ≥ <95>% verified-correct on <150> cases
+   - billing replay: 0 mis-billed results
    - <behavior-specific criterion>
-7. **Evidence required**: eval report before/after, cost delta, `make check`
-   output with exit codes, leak-test result
-8. **Risk & approvals**: tier <L/M/H> per PLAYBOOK §5; approver: <name>
-9. **Stop conditions**: eval regression below gate; leak-test failure;
-   same failure twice; destructive operation proposed
+7. **Required evidence**: commands + exit codes, gold re-run report, billing replay report
+8. **Risk & approvals**: tier <L/M/H> per PLAYBOOK §4; approver: <name>
+9. **Stop conditions**: accuracy below gate · billing mismatch · same failure twice · tier-H action needed

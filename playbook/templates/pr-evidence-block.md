@@ -1,16 +1,16 @@
-## PR Evidence Block (RaaS)
+# PR Evidence Block (Result-as-a-Service)
 
-**Outcome**: <user-visible behavior changed>
-**Tier**: <L/M/H> — reason: <quality-affecting? tenant data? billing?>
+**Outcome**: <what changed in delivered results>
+**Tier**: <L/M/H> — reason: <autonomy? pricing? verifier? none>
 **Scope**: In: <...> / Out: <...>
 
 | Requirement | Command / artifact | Result (pass/fail + commit) |
 |---|---|---|
-| `make check` | `make check` | ✅ @ <sha> |
-| Eval suite (golden vX) | `evals/reports/<file>` | hit@5: a→b · faith: a→b · hall: a→b |
-| Cross-tenant leak test | `pytest tests/isolation` | ✅ 0 leaks |
-| Cost/latency benchmark | `evals/reports/<file>` | $: a→b · p95: a→b |
-| Canary tenant (H only) | <link/ID> | ✅ |
+| make check | `make check` | ✅ @ <sha> |
+| gold re-run | outcomes/reports/<file> | 150 cases · ≥95% verified-correct |
+| billing replay | outcomes/reports/<file> | 0 mis-billed |
+| p95 / cost | outcomes/reports/<file> | ≤1h · ≤+5% |
+| canary client (H only) | <client/ID> | ✅ |
 
-**Rollback**: re-pin <model/config version> + <index action>
-**Approvals**: <names/status> · **AI-assisted**: <yes/no + worktree flag>
+**Rollback**: re-pin <prompts/models/rules> · **Approvals**: <names/status>
+**AI-assisted**: <yes/no + worktree flag>
